@@ -1,4 +1,5 @@
-# yackathon_MTL_2016
+# Yelp hackathon (Yackathon) Montreal 2016
+
 R code developed during the Yackathon Montreal 2016.
 
 It was a good opportunity to practice with these libraries. The code contains good working sample of using these libraries:
