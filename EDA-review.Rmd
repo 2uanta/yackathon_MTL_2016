@@ -1,0 +1,222 @@
+---
+title: "EDA-review"
+author: "Quan Nguyen"
+date: "March 28, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```
+30,404,866 yelp_academic_dataset_business.csv
+13,232,249 yelp_academic_dataset_checkin.csv
+ 1,643,584,468 yelp_academic_dataset_review.csv
+74,489,432 yelp_academic_dataset_tip.csv
+135,860,821 yelp_academic_dataset_user.csv
+```
+## Review
+
+```{r}
+review = read.csv("yelp_academic_dataset_review.csv", header=T, stringsAsFactors = F)
+names(review)
+dim(review)
+
+head(sort(table(review$business_id), decreasing = T), 10)
+head(sort(table(review$business_id)/nrow(review), decreasing = T), 10)
+top_business_review = head(sort(table(review$business_id), decreasing = T), 1000)
+```
+
+# Business
+
+``` {r}
+business = read.csv("yelp_academic_dataset_business.csv", header=T, strip.white = T, stringsAsFactors = F)
+names(business)
+dim(business)
+```
+
+# Join
+
+```{r}
+#business[business$business_id == names(top_business_review[1]),
+#         c("name", "categories", "state", "city")]
+
+
+x = as.data.frame(names(top_business_review))
+colnames(x) = c("business_id")
+y = subset(business, select=c("business_id", "name", "categories", "state", "city", "latitude", "longitude", "full_address"))
+y = droplevels(y)
+review_with_business = merge(review,y, by="business_id")
+
+# merge(x, y, by="business_id")
+```
+
+# Add year,n date
+
+``` {r}
+review_with_business$year = cut(as.Date(review_with_business$date), breaks='year')
+review_with_business$day = cut(as.Date(review_with_business$date), breaks='day')
+
+review_with_business_2015 = subset(review_with_business, year=="2015-01-01")
+review_with_business_QC = subset(review_with_business, state=="QC")
+review_with_business_QC = droplevels(review_with_business_QC)
+review_with_business_QC_2015 = subset(review_with_business_QC, year=="2015-01-01")
+write.csv(review_with_business_QC_2015, file="review_with_business_QC_2015.csv")
+review_with_business_QC_2015 = droplevels(review_with_business_QC_2015)
+
+plot(table(review_with_business_QC_2015$day))
+reviews_2015_QC = table(review_with_business_QC_2015$day)
+write.csv(reviews_2015_QC, file="reviews_2015_QC.csv")
+```
+
+# User
+
+```{r}
+usr = read.csv("yelp_academic_dataset_user.csv", header=T)
+# Gender
+library(gender)
+y = gender(unique(as.character(usr$name)))
+#summary(y)
+#usr$gender = y$gender
+usr_with_gender = merge(usr, y, by="name")
+
+su = subset(usr_with_gender, select=c("user_id", "name", "gender"))
+su = droplevels(su)
+dim(su)
+
+# Merge again to review_with_business
+review_with_business_and_user_2015 = merge(review_with_business_2015,su, by="user_id")
+review_with_business_and_user_2015 = droplevels(review_with_business_and_user_2015)
+dim(review_with_business_and_user_2015)
+table(review_with_business_and_user_2015$gender)
+round(table(review_with_business_and_user_2015$gender)/nrow(review_with_business_and_user_2015)*100,2)
+
+review_with_business_and_user_QC_2015 = merge(review_with_business_QC_2015,su, by="user_id")
+review_with_business_and_user_QC_2015 = droplevels(review_with_business_and_user_QC_2015)
+dim(review_with_business_and_user_QC_2015)
+table(review_with_business_and_user_QC_2015$gender)
+round(table(review_with_business_and_user_QC_2015$gender)/nrow(review_with_business_and_user_QC_2015)*100,2)
+
+write.csv(review_with_business_and_user_QC_2015, file="review_with_business_and_user_QC_2015.csv")
+
+points = subset(review_with_business_and_user_QC_2015, select = c("latitude", "longitude", "gender"))
+write.csv(points,file="points.csv")
+```
+
+
+```{r}
+library(ggplot2)
+library(maps)
+montreal = canada.cities$Montreal
+world = map_data("world")
+
+p = ggplot(
+  review_with_business_and_user_QC_2015, 
+  aes(x=jitter(latitude), y=longitude)) + 
+  geom_point(aes(color=gender)
+  ) +
+  labs(x="latitude") +
+  ggtitle("Location of reviews by gender in Quebec 2015")
+p
+```
+
+```{r}
+library(tm)
+tip_corpus = Corpus(VectorSource(review_with_business_and_user_QC_2015$text))
+tip_corpus = tm_map(tip_corpus, stripWhitespace)
+tip_corpus = tm_map(tip_corpus, removeNumbers)
+tip_corpus = tm_map(tip_corpus, tolower)
+tip_corpus = tm_map(tip_corpus, removePunctuation)
+# will take 5 minutes
+tip_corpus = tm_map(tip_corpus, removeWords, stopwords("english"))
+
+# Problem: cannot mix French and English stopwords
+# tip_corpus <- tm_map(tip_corpus, removeWords, stopwords("french"))
+tip_corpus <- tm_map(tip_corpus, stemDocument)
+tip_corpus <- tm_map(tip_corpus, PlainTextDocument)
+
+library(wordcloud)
+# png("wordcloud.png", width=1280,height=800)
+wordcloud(
+  tip_corpus, 
+  scale=c(3.5,0.5), # difference between the largest and smallest font
+  max.words=100, 
+  min.freq = 2, # words with frequency below min.freq will not be plotted
+  random.order=FALSE, 
+  rot.per=0.2, #  percentage of vertical text
+  use.r.layout=FALSE, 
+  colors=brewer.pal(8, "Dark2")
+)
+# dev.off()
+```
+
+```{r}
+
+top_business_comments = head(round(sort(table(review_with_business_and_user_QC_2015$business_id), decreasing = T),2),100)
+top_business_comments
+head(round(sort(table(review_with_business_and_user_QC_2015$business_id)/nrow(review_with_business_and_user_QC_2015)*100, decreasing = T),2),10)
+
+```
+
+```{r}
+daily_reviews = table(review_with_business_and_user_QC_2015$day)
+daily_reviews_df = as.data.frame(daily_reviews)
+colnames(daily_reviews_df) = c("date","visit")
+plot(daily_reviews, type = 'l')
+
+library(zoo)
+library(TTR)
+par(mar=c(5.1,4.1,4.1,2.1))
+dt = as.Date(daily_reviews_df$date)
+data.z = zoo(x=daily_reviews_df$visit,order.by=dt, frequency = 24)
+class(data.z)
+head(index(data.z))
+head(coredata(data.z))
+sub_text = range(index(data.z))
+plot(data.z,
+     xlab="Date Range",
+     ylab="Watt",
+     #xaxt='n',
+     main="MGE UPS power consumption (last 36 hours)", 
+     sub=paste(sub_text,collapse="  to  ")
+     )
+data.z.SMA = SMA(data.z,n=5)
+lines(data.z.SMA,col="red")
+
+plot(as.Date(daily_reviews_df$date),
+  decompose(ts(coredata(data.z), frequency=24))$trend, 
+  xlab="Date Range",
+  ylab="check-ins",
+  type='l', col=2,
+  main="Check-ins in Quebec in 2015", 
+  sub=paste(sub_text,collapse="  to  ")
+) 
+
+t=tapply(checkin_weekly$total, checkin_weekly$hour, sum)
+
+```
+
+```{r}
+metro = read.csv("metro.csv")
+metro_coord = subset(metro, select=c("geometry.coordinates.0", "geometry.coordinates.1", "properties.stop_name"))
+colnames(metro_coord) = c("latitude", "longitude", "name")
+```
+
+# distance to nearest distance
+
+```{r}
+library(geosphere)
+distance_df= distm(cbind(review_with_business_and_user_QC_2015$latitude[1],review_with_business_and_user_QC_2015$longitude), matrix(as.matrix(metro_coord[,1:2]), ncol=2, dimnames = NULL))
+review_with_business_and_user_QC_2015$distance = apply(distance_df, 1, min)
+review_with_business_and_user_QC_2015$station = metro_coord$name[apply(distance_df, 1, which.min)]
+write.csv(review_with_business_and_user_QC_2015, file="review_with_business_and_user_QC_2015_with_distance.csv")
+cor(review_with_business_and_user_QC_2015$stars, review_with_business_and_user_QC_2015$distance)
+```
+
+# top names
+
+```{r}
+n=head(sort(table(usr$name),decreasing = T),20)
+```
+

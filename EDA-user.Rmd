@@ -1,0 +1,301 @@
+---
+title: "EDA-user"
+author: "Quan Nguyen"
+date: "March 28, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```
+30,404,866 yelp_academic_dataset_business.csv
+13,232,249 yelp_academic_dataset_checkin.csv
+ 1,643,584,468 yelp_academic_dataset_review.csv
+74,489,432 yelp_academic_dataset_tip.csv
+135,860,821 yelp_academic_dataset_user.csv
+```
+## User
+
+```{r}
+# took 5 minutes
+usr = read.csv("yelp_academic_dataset_user.csv", header=T)
+names(usr)
+# [1] "yelping_since"       "compliments.plain"   "review_count"       
+# [4] "friends"             "compliments.cute"    "compliments.writer" 
+# [7] "fans"                "compliments.note"    "type"               
+#[10] "compliments.hot"     "compliments.cool"    "compliments.profile"
+#[13] "average_stars"       "compliments.more"    "elite"              
+#[16] "name"                "user_id"             "votes.cool"         
+#[19] "compliments.list"    "votes.funny"         "compliments.photos" 
+#[22] "compliments.funny"   "votes.useful" 
+
+dim(usr)
+# [1] 552339     23
+
+summary(usr$average_stars)
+#   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+#  0.000   3.250   3.900   3.741   4.500   5.000 
+summary(usr$votes.cool)
+#    Min.  1st Qu.   Median     Mean  3rd Qu.     Max. 
+#    0.00     0.00     1.00    28.07     5.00 52440.00 
+max(usr$votes.cool)
+# [1] 52441
+grep('52441', usr$votes.cool)
+# [1] 67641
+
+summary(usr$votes.funny)
+#    Min.  1st Qu.   Median     Mean  3rd Qu.     Max. 
+#    0.00     0.00     1.00    24.81     5.00 45740.00 
+max(usr$votes.funny)
+# [1] 45738
+grep('45738', usr$votes.funny)
+# [1] 67641 # Same user as above
+
+summary(usr$votes.useful)
+#    Min.  1st Qu.   Median     Mean  3rd Qu.     Max. 
+#    0.00     1.00     4.00    51.16    18.00 55940.00
+max(usr$votes.useful)
+# [1] max(usr$votes.useful)
+# [1] 55937
+grep('55937', usr$votes.useful)
+# [1] 67641 # Same user as above
+
+x = usr[67641,]
+names(x)
+```
+
+```
+> str(x)
+'data.frame':	1 obs. of  23 variables:
+ $ yelping_since      : Factor w/ 136 levels "2004-10","2004-11",..: 98
+ $ compliments.plain  : int 6753
+ $ review_count       : int 855
+ $ friends            : Factor w/ 229834 levels "['--0mI_q_0D1CdU4P_hoImQ', 'i0Py3iDVf3VdJ51gpEF8zA']",..: 168153
+ $ compliments.cute   : int 1076
+ $ compliments.writer : int 3373
+ $ fans               : int 155
+ $ compliments.note   : int 2139
+ $ type               : Factor w/ 1 level "user": 1
+ $ compliments.hot    : int 3925
+ $ compliments.cool   : int 6128
+ $ compliments.profile: int 1595
+ $ average_stars      : num 4.37
+ $ compliments.more   : int 1556
+ $ elite              : Factor w/ 310 levels "[]","[2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015]",..: 304
+ $ name               : Factor w/ 54194 levels "'Adrian","'Alexis",..: 18136
+ $ user_id            : Factor w/ 552339 levels "--_L4WuJxAfQkRtC1e43hg",..: 228749
+ $ votes.cool         : int 52441
+ $ compliments.list   : int 731
+ $ votes.funny        : int 45738
+ $ compliments.photos : int 14537
+ $ compliments.funny  : int 1650
+ $ votes.useful       : int 55937
+ ```
+ 
+ 
+  
+```{r eval=F}
+xx = droplevels(x)
+str(xx)
+```
+
+```
+> str(xx)
+'data.frame':	1 obs. of  23 variables:
+ $ yelping_since      : Factor w/ 1 level "2012-11": 1
+ $ compliments.plain  : int 6753
+ $ review_count       : int 855
+ $ friends            : Factor w/ 1 level "['rpOyqD_893cqmDAtJLbdog', '4U9kSBLuBDU391x6bxU-YA', '8J4IIYcqBlFch8T90N923A', 'zTWH9b_ItSdLOK9ypeFOIw', '7uxXuCcpw9-mUS3OJVw8a"| __truncated__: 1
+ $ compliments.cute   : int 1076
+ $ compliments.writer : int 3373
+ $ fans               : int 155
+ $ compliments.note   : int 2139
+ $ type               : Factor w/ 1 level "user": 1
+ $ compliments.hot    : int 3925
+ $ compliments.cool   : int 6128
+ $ compliments.profile: int 1595
+ $ average_stars      : num 4.37
+ $ compliments.more   : int 1556
+ $ elite              : Factor w/ 1 level "[2013, 2014, 2015]": 1
+ $ name               : Factor w/ 1 level "Harald": 1
+ $ user_id            : Factor w/ 1 level "hDNEnfYmj7DCCLxcI4W1tw": 1
+ $ votes.cool         : int 52441
+ $ compliments.list   : int 731
+ $ votes.funny        : int 45738
+ $ compliments.photos : int 14537
+ $ compliments.funny  : int 1650
+ $ votes.useful       : int 55937
+```
+
+```{r eval=F}
+save(xx, file="xx.RDA")
+xx_friends = xx$friends
+save(xx_friends, file="xx_friends.RDA")
+
+```
+
+```{r}
+re_usr = subset(usr, select=-c(yelping_since, friends, type, elite, name, user_id))
+```
+
+```{r}
+hist(log(usr$votes.cool), breaks=50)
+hist(log(usr$votes.funny), breaks=50)
+hist(log(usr$votes.useful), breaks=50)
+summary(usr$votes.cool)
+```
+
+```{r eval=F}
+library(rattle)
+rattle()
+```
+
+```
+#============================================================
+# Rattle timestamp: 2016-03-30 11:51:50 x86_64-w64-mingw32 
+
+# Note the user selections. 
+
+# Build the training/validate/test datasets.
+
+set.seed(crv$seed) 
+crs$nobs <- nrow(crs$dataset) # 552339 observations 
+crs$sample <- crs$train <- sample(nrow(crs$dataset), 0.7*crs$nobs) # 386637 observations
+crs$validate <- sample(setdiff(seq_len(nrow(crs$dataset)), crs$train), 0.15*crs$nobs) # 82850 observations
+crs$test <- setdiff(setdiff(seq_len(nrow(crs$dataset)), crs$train), crs$validate) # 82852 observations
+
+# The following variable selections have been noted.
+
+crs$input <- c("compliments.plain", "review_count", "compliments.cute", "compliments.writer",
+     "fans", "compliments.note", "compliments.hot", "compliments.cool",
+     "compliments.profile", "average_stars", "compliments.more", "votes.cool",
+     "compliments.list", "votes.funny", "compliments.photos", "compliments.funny",
+     "votes.useful")
+
+crs$numeric <- c("compliments.plain", "review_count", "compliments.cute", "compliments.writer",
+     "fans", "compliments.note", "compliments.hot", "compliments.cool",
+     "compliments.profile", "average_stars", "compliments.more", "votes.cool",
+     "compliments.list", "votes.funny", "compliments.photos", "compliments.funny",
+     "votes.useful")
+
+crs$categoric <- NULL
+
+crs$target  <- NULL
+crs$risk    <- NULL
+crs$ident   <- NULL
+crs$ignore  <- NULL
+crs$weights <- NULL
+
+#============================================================
+# Rattle timestamp: 2016-03-30 11:53:34 x86_64-w64-mingw32 
+
+# Generate a correlation plot for the variables. 
+
+# The 'corrplot' package provides the 'corrplot' function.
+
+library(corrplot, quietly=TRUE)
+
+# Correlations work for numeric variables only.
+
+crs$cor <- cor(crs$dataset[crs$sample, crs$numeric], use="pairwise", method="pearson")
+
+# Order the correlations by their strength.
+
+crs$ord <- order(crs$cor[1,])
+crs$cor <- crs$cor[crs$ord, crs$ord]
+
+# Display the actual correlations.
+
+print(crs$cor)
+
+# Graphically display the correlations.
+
+corrplot(crs$cor, mar=c(0,0,1,0))
+title(main="Correlation re_usr using Pearson",
+    sub=paste("Rattle", format(Sys.time(), "%Y-%b-%d %H:%M:%S"), Sys.info()["user"]))
+
+* Data: Select R dataset: re_usr, execute, 3 partitions created
+* no target selected
+* Explore: correlation
+* Cluster: k-means, 10 clusters
+* Cluster: ewkm
+
+EWKM: 10 clusters, 98 iterations, 0 restarts, 99 total iterations.
+
+Cluster sizes:
+
+[1] "107 35 848 319 422 1155 989 459 1 27"
+
+* Cluster: hierarchical
+  * Dendogram: will help to choose the number of branches (clusters)
+  * Data Plot will take forever
+  * BiCluster took 10 secs +
+* Model:
+  * 
+  
+============
+
+* Data: reduce
+* Explore: Summary
+
+Below we summarise the dataset.
+
+The data is limited to the training dataset.
+Note that the data contains 309795 observations with missing values. 
+Enable the 'Show Missing' check box for details.
+
+Data frame:crs$dataset[crs$sample, c(crs$input, crs$risk, crs$target)]	386637 observations and 5 variables    Maximum # NAs:309795
+
+
+                  Storage    NAs
+review_count      integer      0
+fans              integer      0
+average_stars      double      0
+votes.useful      integer      0
+compliments.plain integer 309795
+
+For the simple distribution tables below the 1st and 3rd Qu. 
+refer to the first and third quartiles, indicating that 25% 
+of the observations have values of that variable which are 
+less than or greater than (respectively) the value listed.
+
+  review_count          fans          average_stars    votes.useful     
+ Min.   :   0.00   Min.   :   0.000   Min.   :0.000   Min.   :    0.00  
+ 1st Qu.:   2.00   1st Qu.:   0.000   1st Qu.:3.250   1st Qu.:    1.00  
+ Median :   6.00   Median :   0.000   Median :3.900   Median :    4.00  
+ Mean   :  27.66   Mean   :   1.328   Mean   :3.739   Mean   :   50.89  
+ 3rd Qu.:  18.00   3rd Qu.:   0.000   3rd Qu.:4.500   3rd Qu.:   18.00  
+ Max.   :5833.00   Max.   :1657.000   Max.   :5.000   Max.   :55937.00  
+                                                                        
+ compliments.plain 
+ Min.   :    1.00  
+ 1st Qu.:    1.00  
+ Median :    2.00  
+ Mean   :   21.97  
+ 3rd Qu.:    5.00  
+ Max.   :21007.00  
+ NA's   :309795    
+
+Rattle timestamp: 2016-03-30 17:16:54 Quan Nguyen
+
+```
+
+```{r}
+# Most common names
+head(sort(table(usr$name), decreasing = T), 200)
+round(head(sort(table(usr$name)/nrow(usr)*100, decreasing = T), 50),2)
+```
+
+```{r}
+# Gender
+library(gender)
+x = sapply(usr$name, as.character)
+y = gender(x)
+summary(y)
+usr$gender = y$gender
+# y = gender(x, method="genderize")
+# summary(y)
+```
+

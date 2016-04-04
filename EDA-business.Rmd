@@ -1,0 +1,110 @@
+---
+title: "EDA-business"
+author: "Quan Nguyen"
+date: "March 28, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```
+30,404,866 yelp_academic_dataset_business.csv
+13,232,249 yelp_academic_dataset_checkin.csv
+ 1,643,584,468 yelp_academic_dataset_review.csv
+74,489,432 yelp_academic_dataset_tip.csv
+135,860,821 yelp_academic_dataset_user.csv
+```
+## Business
+
+```{r}
+business = read.csv("yelp_academic_dataset_business.csv", header=T, strip.white = T)
+names(business)
+dim(business)
+# [1] 77445    98
+table(business$state)
+
+#         AL    AR    AZ    BW    CA   EDH   ELN   FIF   HAM    IL   KHL 
+#    1     1     1 32615  1048     3  3206    12     5     1   737     1 
+#   MA   MLN    MN    NC    NM   NTH    NV    NW    ON    OR    PA    QC 
+#    1   147     1  6162     1     1 21233     1   474     1  3754  4942 
+#   RP    SC   SCB    TX    WI 
+#   18   271     3     2  2802 
+str(business$city)
+# Factor w/ 412 levels "","110. Las Vegas",..: 98 98 98 22 286 298 286 47 47 47 ... 
+# accents are in the name
+dim(subset(business, city == "Montreal"))
+# Just a subset
+# [1] 88 98
+
+QC = subset(business, state=="QC")
+QC = droplevels(QC)
+names(table(QC$city))
+
+str(business$neighborhoods)
+#  Factor w/ 278 levels "['Ahunstic-Cartierville']",..: 269 269 269 269 269 269 269 78 269 29 ...
+names(table(QC$neighborhoods))
+
+head(sort(table(business$categories), decreasing = T), 10)
+round(head(sort(table(business$categories)/nrow(business)*100, decreasing = T), 10), 2)
+head(sort(table(QC$categories), decreasing = T), 10)
+round(head(sort(table(QC$categories)/nrow(QC)*100, decreasing = T), 10), 2)
+# 
+barplot(table(business$stars))
+barplot(table(QC$stars))
+
+fivestars = subset(business, stars == 5)
+fivestarsQC = subset(fivestars, state == "QC")
+four.5.stars = subset(business, stars == 4.5)
+fourstars = subset(business, stars == 4)
+fourstarsQC = subset(fourstars, state == "QC")
+
+head(sort(table(fivestars$categories), decreasing = T), 10)
+round(head(sort
+     (table(fivestars$categories)/nrow(fivestars)*100, 
+     decreasing = T), 10
+),2)
+
+head(sort(table(fivestarsQC$categories), decreasing = T), 10)
+round(head(sort
+     (table(fivestarsQC$categories)/nrow(fivestarsQC)*100, 
+     decreasing = T), 10
+),2)
+
+head(sort(table(four.5.stars$categories), decreasing = T), 10)
+round(head(sort
+     (table(four.5.stars$categories)/nrow(fivestars)*100, 
+     decreasing = T), 10
+),2)
+
+head(sort(table(fourstars$categories), decreasing = T), 10)
+round(head(sort
+     (table(fourstars$categories)/nrow(fourstars)*100, 
+     decreasing = T), 10
+),2)
+
+head(sort(table(fourstarsQC$categories), decreasing = T), 10)
+round(head(sort
+     (table(fourstarsQC$categories)/nrow(fourstarsQC)*100, 
+     decreasing = T), 10
+),2)
+```
+
+``` {r eval=F}
+library(rattle)
+rattle()
+```
+
+```{r eval=F}
+library(rpart)
+set.seed(123)
+train.indeces <- sample(1:nrow(QC), nrow(QC)/70)
+training <- QC[train.indeces, ]
+testing <- QC[-train.indeces, ]
+
+fit = lm(stars ~ attributes.Parking.street + attributes.Has.TV + attributes.Wi.Fi   , data=training)
+#results <- predict(object = fit, newdata = testing)
+#table(results, QC$stars)
+```
+

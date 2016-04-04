@@ -1,0 +1,88 @@
+---
+title: "EDA-check-in"
+author: "Quan Nguyen"
+date: "March 28, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```
+30,404,866 yelp_academic_dataset_business.csv
+13,232,249 yelp_academic_dataset_checkin.csv
+ 1,643,584,468 yelp_academic_dataset_review.csv
+74,489,432 yelp_academic_dataset_tip.csv
+135,860,821 yelp_academic_dataset_user.csv
+```
+
+# Check-in
+
+```{r}
+# set up custom class
+setClass("empty.is.0")
+setAs("character", "empty.is.0", 
+      function(from) replace(as.numeric(from), from == "", 0))
+
+checkin = read.csv(
+  "yelp_academic_dataset_checkin.csv", 
+  header=T, strip.white = T, 
+  colClasses = "empty.is.0"
+)
+
+names(checkin)
+dim(checkin)
+# [1] 55569   170
+
+checkin_total = sort(sapply(checkin, sum))
+checkin_hour = gsub('checkin_info.([0-9]+).([0-9]+)', '\\1', names(checkin_total))
+checkin_day = gsub('checkin_info.([0-9]+).([0-9]+)', '\\2', names(checkin_total))
+checkin_hours = as.integer(checkin_day)*24+as.integer(checkin_hour)
+checkin_weekly = as.data.frame(cbind(
+  total=as.numeric(checkin_total), 
+  day=as.numeric(checkin_day), 
+  hour=as.numeric(checkin_hour), 
+  hours=as.numeric(checkin_hours)
+))
+```
+
+``` {r}
+checkin_weekly = checkin_weekly[order(checkin_weekly$hours), ]
+plot(checkin_weekly[,1], type='h')
+library(ggplot2)
+library("directlabels")
+# requires package directlabels
+library("directlabels")
+
+myplot <- ggplot(
+  checkin_weekly,
+  aes(
+    x=hours,
+    y=total,
+    colour=day
+  )
+) +
+  geom_step() +
+  ggtitle("Total check-in's per hour and day of the week") +
+  theme(legend.position="none") +
+  labs(x="Day of the week", y="Total check-ins") +
+  scale_x_continuous(breaks = seq(0,168,24),
+  labels=c("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"))
+myplot
+
+myplot <- ggplot(
+  checkin_weekly,
+  aes(
+    x=hour,
+    y=total,
+    fill=day
+  )
+) +
+  geom_bar(stat = "identity") +
+  ggtitle("Total check-in's by hour") +
+  labs(y="Total check-ins") +
+  scale_x_continuous(breaks = seq(0,23,1))
+myplot
+```
+
