@@ -14,3 +14,6 @@ It was a good opportunity to practice with these libraries. The code contains go
 * library(wordcloud)
 * library(zoo)
 
+Please register and download the Yelp datasets at
+
+  https://www.yelp.ca/dataset_challenge/yackathon
